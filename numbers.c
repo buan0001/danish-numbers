@@ -26,7 +26,7 @@ const char *og = "og";
 const char *space = " ";
 
 int numbers[255];
-int org_number = 801;
+int org_number = 1293;
 int digits = 0;
 
 
@@ -50,28 +50,33 @@ int main() {
     }
 
     int max_digits = digits;
-    
+    printf("Index 01: %d\n", numbers[01]);
+    printf("Index 02: %d\n", numbers[02]);
     temp_number = org_number;
     char final[255] = "";
-    while (digits)
+    int first_iteration = 1;
+    while (digits > 0)
      {
         print_numbers();
         printf("Temp number: %d\n", temp_number);
         printf("Digits: %d\n", digits);
+        if (!first_iteration) {
+            strcat(final, space);
+        }
 
         if (digits == 4){
             char *temp_digit = numbers_0_to_19[numbers[digits-1]];
-            strcat(final, temp_digit);
+            strcat(final, strcmp(temp_digit, "en") == 0 ? "et" : temp_digit);
             strcat(final, space);
             strcat(final, "tusind");
             }
         else if (digits == 7){
             char *temp_digit = numbers_0_to_19[numbers[digits-1]];
-            if (temp_digit != "nul") {
+            if ( strcmp(temp_digit, "nul") == 0) {
             strcat(final, temp_digit);
             strcat(final, space);
             }
-            if (max_digits == 7 && temp_digit == "en" ){
+            if (max_digits == 7 && strcmp(temp_digit, "en") == 0 ){
                 strcat(final, "million");
             }
             else {
@@ -83,13 +88,13 @@ int main() {
             char *temp_digit = numbers_0_to_19[numbers[digits-1]];
             strcat(final, temp_digit);
             strcat(final, space);
-            strcat(final, temp_digit == "en" ? "milliard" : "milliarder");
+            strcat(final, strcmp(temp_digit, "en") == 0 ? "milliard" : "milliarder");
             }
        
-        if (digits % 3 == 0) {
+        else if (digits % 3 == 0) {
             printf("digits are dividable by 3 and are a sort of hundred\n");
             char *temp_single = numbers_0_to_19[numbers[digits-1]];
-            strcat(final, temp_single);
+            strcat(final, strcmp(temp_single, "en") == 0 ? "et" : temp_single);
             // strcat(final, og);
             strcat(final, space);
             strcat(final, "hundrede");
@@ -97,34 +102,42 @@ int main() {
                 printf("Final: %s\n", final);
                 return 0;
             }
-            strcat(final, space);
+            // strcat(final, space);
         }
         else {
+            // We are dealing with numbers less than 100 - can be 88 thousand, but we only look at the "88" part here
             printf("digits are NOT dividable by 3\n");
-            if (temp_number < 20) {
-                printf("Number is %s\n", numbers_0_to_19[org_number]);
-                break;
+            // Check if the number is less than 20, since they have special words
+            if (numbers[digits-1] < 2) {
+                int less_than_twenty = numbers[digits-1] * 10 + numbers[digits-2];
+                printf("Word at %d is %s\n", less_than_twenty, numbers_0_to_19[less_than_twenty]);
+                strcat(final, numbers_0_to_19[less_than_twenty]);
             }
-            else if (temp_number < 100){
-                // char final[255] = tens[numbers[1]];
+            else {
+                
                 char *temp_tens = tens[numbers[digits-1]];
                 char *temp_single = numbers_0_to_19[numbers[digits-2]];
                 strcat(final, temp_single);
                 strcat(final, og);
                 strcat(final, temp_tens);
                 printf("Final: %s\n", final);
-                break;
             }
+            if (digits == 2)
+            {
+                digits = 0;
+            }
+            
         }
 
         
 
         
-        
+        first_iteration = 0;
         digits--;
         temp_number = temp_number / 10;
      }
 
+    printf("Final: %s\n", final);
     return 0;
 }
 
