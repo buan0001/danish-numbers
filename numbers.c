@@ -2,6 +2,7 @@
 #include <string.h>
 #include "numbers.h"
 #include <math.h>
+#include <limits.h>
 
 // char *basics[9];
 // basics[0] = "en";
@@ -41,11 +42,29 @@ const char *space = " ";
 
 int number_to_danish(int number, char *result)
 {
+
+    
     struct NumberFormat format = {LAST, EVERY, EVERY};
     int numbers[255];
 
     int digits = 0;
     printf("Converting: %d\n", number);
+
+    if (number > INT_MAX)
+    {
+        strcat(result, "Number is too large");
+        return 0;
+    }
+    else if (number == 0)
+    {
+        strcat(result, "nul");
+        return 0;
+    }
+    else if (number < 0)
+    {
+        strcat(result, "minus ");
+        number = abs(number);
+    }
     int temp_number = number;
     while (temp_number)
     {
@@ -56,16 +75,7 @@ int number_to_danish(int number, char *result)
 
     printf("Digits: %d\n", digits);
     print_numbers(numbers, digits);
-    if (number == 0)
-    {
-        strcat(result, "nul");
-        return 0;
-    }
-    else if (number < 0)
-    {
-        strcat(result, "minus");
-        number = number * -1;
-    }
+
     int max_digits = digits;
     int values_left = 1;
     int remainder = number;
@@ -85,20 +95,12 @@ int number_to_danish(int number, char *result)
             if (numbers[digits - 1] < 2)
             {
                 printf("We are in the teens\n");
-                int less_than_twenty = 0;
+                
                 // We have to treat the two cases differently: If there's only 2 digits left, there wont be a "special" digit afterwards
                 // Where as in every other case, there is either a "thousand", "million" or "billion" after
                 // Need to not be at max digits, or it crashes
-                // if (digits == 2 && max_digits != digits)
-                // {
-                //     printf("We are in the last two digits of a longer number\n");
-                //     less_than_twenty = numbers[digits-] * 10 + numbers[digits - 1];
-                // }
-                //  if (digits <= 2)
-                // // else if (digits <= 2)
-                // {
                 printf("Treating teens\n");
-                less_than_twenty = numbers[digits - 1] * 10 + numbers[digits - 2];
+                int less_than_twenty  = numbers[digits - 1] * 10 + numbers[digits - 2];
                 // }
                 if (less_than_twenty != 0)
                 {
@@ -125,7 +127,7 @@ int number_to_danish(int number, char *result)
                 // printf("numbers[digits - 1] %d. numbers[digits - 2]: %d\n", numbers[digits - 1], numbers[digits - 2]);
                 char *temp_tens = tens[numbers[digits - 1]];
                 char *temp_single = ones[numbers[digits - 2]];
-                // Only include the one if it's not 0
+                // Only include the "one spot" if it's not 0
                 if (numbers[digits - 2] != 0)
                 {
                     printf("Temp single: %s\n", temp_single);
@@ -220,7 +222,7 @@ int number_to_danish(int number, char *result)
             // We check if there's any values before the thousand spot. Only add thousand if there are
             // Also make sure that the digits we check for dont exceed the max digits
             printf(" numbers[digits + 1]: %d\n", numbers[digits + 1]);
-            // if (numbers[digits] != 0 || (max_digits > 5 && numbers[digits + 1] != 0))
+            // if (numbers[digits] != 0 || (max_digits > 5 && numbers[digits] != 0) || (max_digits > 6 && numbers[digits + 1] != 0))
             if (numbers[digits] != 0 || (max_digits > 5 && numbers[digits + 1] != 0) || (max_digits > 6 && numbers[digits + 2] != 0))
             {
                 strcat(result, "tusind");
@@ -250,34 +252,12 @@ int number_to_danish(int number, char *result)
                 printf("No values IN thousands:\n");
                 printf("numbers[digits + 1]: %d. numbers[digits + 2]: %d\n", numbers[digits + 1], numbers[digits + 2]);
             }
-
-            // strcat(result, "tusind");
-            // if (format.e == EVERY || (format.e == LAST && values_left == 1))
-            // {
-            //     strcat(result, "e");
-            // }
-            // if (format.og == EVERY || (format.og == LAST && values_left == 2))
-            // {
-            //     printf("Adding og and space\n");
-            //     strcat(result, space);
-            //     strcat(result, "og");
-            // }
-            // if (values_left > 1)
-            // {
-            //     strcat(result, space);
-            // }
-            // else
-            // {
-            //     printf("No values left from thousands\n");
-            //     break;
-            // }
         }
 
         else if (digits == 7)
         {
             printf("We are in the millions\n");
             if (max_digits == digits || numbers[digits] != 0 || (max_digits > 8 && numbers[digits + 1] != 0))
-            // if (max_digits == digits)
             {
                 if (max_digits == digits)
                 {
@@ -298,12 +278,12 @@ int number_to_danish(int number, char *result)
                 {
                     strcat(result, "millioner");
                 }
-                if (format.og == EVERY || (format.og == LAST && values_left == 1))
+                if (format.og == EVERY || (format.og == LAST && values_left == 2))
                 {
                     printf("Adding space and og\n");
                     strcat(result, " og");
                 }
-                if (values_left > 0)
+                if (values_left > 1)
                 {
                     strcat(result, space);
                 }
@@ -323,123 +303,53 @@ int number_to_danish(int number, char *result)
         else if (digits == 10)
         {
             printf("We are in the billions\n");
+
+            if (max_digits == digits || numbers[digits] != 0 || (max_digits > 11 && numbers[digits + 1] != 0))
+            {
+                if (max_digits == digits)
+                {
+                    char *temp_single = ones[numbers[digits - 1]];
+                    printf("We are in the first billions. Temp single: %s\n", temp_single);
+                    printf("numbers[digits - 1]] %d\n", numbers[digits - 1]);
+                    if (numbers[digits - 1] == 1)
+                    {
+                        strcat(result, "en milliard");
+                    }
+                    else if (numbers[digits - 1] != 1)
+                    {
+                        strcat(result, temp_single);
+                        strcat(result, "milliarder");
+                    }
+                }
+                else
+                {
+                    strcat(result, "milliarder");
+                }
+                if (format.og == EVERY || (format.og == LAST && values_left == 2))
+                {
+                    printf("Adding space and og\n");
+                    strcat(result, " og");
+                }
+                if (values_left > 1)
+                {
+                    strcat(result, space);
+                }
+                else
+                {
+                    printf("No values left from billions\n");
+                    break;
+                }
+            }
+
         }
 
         printf("Currently in the buffer at index %d: %s\n", i, result);
         digits--;
         remainder = remainder % 10;
-        // if (!any_values_left){
-        //     printf("finished loop and no values left\n");
-        //     break;
-        // }
     }
 
-    // while (digits > 0){
-    //     switch (digits)
-    //     {
-    //         case 12:
-    //         case 9:
-    //         case 6:
-    //             printf("Digits BEFORE handle_hundreds: %d\n", digits);
-    //             recent_change = handle_hundreds(result, numbers, &digits);
-    //             printf("Digits AFTER handle_hundreds: %d\n", digits);
-    //             break;
-    //         case 11:
-    //         case 8:
-    //         case 5:
-    //             printf("Final BEFORE handle_tens: %s\n", result);
-    //             int temp_change = handle_tens(result, numbers, &digits);
-    //             if (!recent_change && temp_change) {
-    //                 recent_change = 1;
-    //             }
-    //             printf("Final AFTER handle_tens: %s\n", result);
-    //             break;
-    //         default:
-    //             printf("Digits when reaching thousand/mill/bil: %d\n", digits);
-    //             char *temp_digit = ones[numbers[digits-1]];
-    //             int is_en = 0;
-    //             if (!is_null(temp_digit)){
-    //             // convert en to et if it's a thousand coming up, otherwise leave it at en
-
-    //                 if ((strcmp(temp_digit, "en") == 0) && digits < 6) {
-    //                     temp_digit = (strcmp(temp_digit, "en") == 0) ? "et" : temp_digit;
-    //                 }
-
-    //                 if (digits == max_digits || (numbers[digits] == 0 && numbers[digits+1] == 0))
-    //                 {
-    //                     is_en = (strcmp(temp_digit, "en") == 0);
-    //                     recent_change = 1;
-    //                     printf("Is en: %d\n", is_en);
-    //                     printf("Final before adding 'en' loop: %s\n", result);
-    //                     printf("(numbers[digits]: %d. numbers[digits+1]: %d\n", numbers[digits], numbers[digits+1]);
-    //                     // printf("Temp digit in bill/mill/thousand: %s\n", temp_digit);
-    //                     strcat(result, temp_digit);
-    //                     strcat(result, space);
-    //                 }
-    //             }
-    //             else {
-    //                 printf("The temp digit is null at position %d\n", digits-1);
-    //             }
-    //             printf("Made recent change: %d\n", recent_change);
-    //             if (digits > 9 && recent_change) {
-    //                 printf("We are in the billions\n");
-    //                 strcat(result, "milliard");
-    //             }
-    //             else if (digits > 6 && recent_change) {
-    //                 printf("We are in the millions\n");
-    //                 strcat(result, "million");
-    //             }
-    //             else if (digits > 3 && recent_change) {
-    //                 printf("We are in the thousands\n");
-    //                 strcat(result, "tusind");
-    //             }
-    //             if (digits > 6 && !is_en) {
-    //                 strcat(result, "er");
-    //             }
-
-    //             digits--;
-    //             if (!is_final(numbers, digits)){
-    //                 printf("Is not final\n");
-    //                 if (recent_change)
-    //                 {
-    //                     strcat(result, space);
-    //                 }
-    //              }
-    //             else {
-    //                 printf("Is final\n");
-    //                 strcat(result, space);
-    //                 strcat(result, "og");
-    //                 strcat(result, space);
-    //             }
-    //             recent_change = 0;
-    //             printf("Final in the loop: %s\n", result);
-    //         }
-    //         if (digits == 3) {
-    //             handle_hundreds(result, numbers, &digits);
-    //         }
-    //         if (digits == 1 || digits == 2) {
-    //             handle_tens(result, numbers, &digits);
-    //         }
-    //     }
-
-    // printf("Final: %s\n", result);
     return 0;
 }
-// int check_for_final(int* numbers, int digits)
-// {
-// if (!is_final(numbers, digits-1)){
-//     printf("Is not final\n");
-//     if (recent_change)
-//     {
-//         strcat(result, space);
-//     }
-// }
-// else {
-//     printf("Is final\n");
-//     strcat(result, space);
-//     strcat(result, "og");
-//     strcat(result, space);
-// }
 
 int handle_hundreds(char *result, int *numbers, int *digits)
 {
@@ -556,34 +466,20 @@ void print_numbers(int *numbers, int digits)
     }
 }
 
-void print_arrays()
-{
-    printf("Numbers 0 to 19:\n");
-    for (int i = 0; i < 20; i++)
-    {
-        printf("%d: %s\n", i, ones[i]);
-    }
-
-    printf("\nMultiples of 10:\n");
-    for (int i = 1; i <= 10; i++)
-    {
-        printf("%d: %s\n", i * 10, tens[i]);
-    }
-}
-
 int get_values_left(int *numbers, int digits)
 {
     printf("Get values left\n");
     printf("Digits: %d\n", digits);
-    print_numbers(numbers, digits);
+    // print_numbers(numbers, digits);
     int value_left = 0;
     for (int i = 0; i < digits; i++)
     {
-        printf("Numbers[i] at index %d: %d\n", i, numbers[i]);
+        // printf("Numbers[i] at index %d: %d\n", i, numbers[i]);
         // Lowest values come first in the array.
         // Numbers[i+2 % 3] is the value on the 10 spot. IF it has a value, we should ignore numbers[0], since they both make up the same number
         // And instead increment the index by 1
-        printf("i + 2 %% 3 == 2 %d\n", i + 2 % 3 == 0);
+        // ... not enough though
+        // printf("i + 2 %% 3 == 2 %d\n", i + 2 % 3 == 0);
         if (i + 2 % 3 == 2 && numbers[i + 1] != 0)
         {
             // if (numbers[1] != 0) {
@@ -600,27 +496,3 @@ int get_values_left(int *numbers, int digits)
     }
     return value_left;
 }
-
-// int is_final(int *numbers, int digits)
-// {
-//     int remaining_value = 0;
-//     for (int i = 0; i < digits; i++)
-//     {
-//         if (i > 0)
-//         {
-//             remaining_value += pow(numbers[i], i);
-//         }
-//         else
-//         {
-//             remaining_value += numbers[i];
-//         }
-//     }
-//     remaining_value = remaining_value % 10;
-//     int final = remaining_value == 0 ? 1 : 0;
-//     printf("digits: %d\n", digits);
-//     if (digits < 3)
-//     {
-//         final = 1;
-//     }
-//     return final;
-// }
