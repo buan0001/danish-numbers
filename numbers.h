@@ -1,14 +1,23 @@
-#if !defined NUMBERS_H
+#ifndef NUMBERS_H
 #define NUMBERS_H
 
-void print_numbers(int *numbers, int digits);
-void print_arrays();
-int handle_tens(char *result, int *numbers, int *digits);
-// void handle_tens(char* result, int* numbers, int digits);
-int handle_hundreds(char *result, int *numbers, int *digits);
-void and_space(char *result);
-int number_to_danish(int number, char *result);
-int is_null(char *input);
-int get_values_left(int *numbers, int digits);
+typedef enum
+{
+    NEVER,
+    EVERY,
+    LAST
+} occurence;
 
-#endif // MACRO
+struct NumberFormat
+{
+    occurence og;
+    occurence e;
+    occurence et;
+};
+
+int number_to_danish(int number, char *buffer,struct NumberFormat format);
+void handle_tens(int number, char *buffer);
+void handle_hundreds(int number, char *buffer, struct NumberFormat format, int endFlag);
+void handle_formatting(char *buffer, struct NumberFormat format, int endFlag, char *num_type, char *one_type, int f_amount, int s_amount);
+
+#endif
