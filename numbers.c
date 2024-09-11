@@ -105,11 +105,13 @@ int number_to_danish(int number, char *result)
                     char *temp_teen = first_twenty[less_than_twenty];
                     printf("Word at %d is %s\n", less_than_twenty, temp_teen);
                     // It must be "et tusind" rather than "en tusind", so check for 5 digits (the digit before thousands)
-                    if (digits == 5 && less_than_twenty == 1) {
+                    if (digits == 5 && less_than_twenty == 1)
+                    {
                         strcat(result, "et");
                     }
-                    else {
-                    strcat(result, first_twenty[less_than_twenty]);
+                    else
+                    {
+                        strcat(result, first_twenty[less_than_twenty]);
                     }
                     if (digits != 2)
                     {
@@ -214,40 +216,41 @@ int number_to_danish(int number, char *result)
                 printf("Adding space\n");
                 strcat(result, space);
             }
-            else
+
+            // We check if there's any values before the thousand spot. Only add thousand if there are
+            // Also make sure that the digits we check for dont exceed the max digits
+            printf(" numbers[digits + 1]: %d\n", numbers[digits + 1]);
+            // if (numbers[digits] != 0 || (max_digits > 5 && numbers[digits + 1] != 0))
+            if (numbers[digits] != 0 || (max_digits > 5 && numbers[digits + 1] != 0) || (max_digits > 6 && numbers[digits + 2] != 0))
             {
-                // We check if there's any values before the thousand spot. Only add thousand if there are
-                // Also make sure that the digits we check for dont exceed the max digits
-                printf(" numbers[digits + 1]: %d\n", numbers[digits + 1 ] );
-                // if (numbers[digits] != 0 || (max_digits > 5 && numbers[digits + 1] != 0))
-                if (numbers[digits] != 0 || (max_digits > 5 && numbers[digits+1] != 0) || (max_digits > 6 && numbers[digits+2] != 0))
+                strcat(result, "tusind");
+                if (format.e == EVERY || (format.e == LAST && values_left == 1))
                 {
-                    strcat(result, "tusind");
-                    if (format.e == EVERY || (format.e == LAST && values_left == 1))
-                    {
-                        strcat(result, "e");
-                    }
-                    if (format.og == EVERY || (format.og == LAST && values_left == 2))
-                    {
-                        printf("Adding og and space\n");
-                        strcat(result, space);
-                        strcat(result, "og");
-                    }
-                    if (values_left > 1)
-                    {
-                        strcat(result, space);
-                    }
-                    else
-                    {
-                        printf("No values left from thousands\n");
-                        break;
-                    }
+                    strcat(result, "e");
                 }
-                else {
-                    printf("No values IN thousands:\n");
-                    printf("numbers[digits + 1]: %d. numbers[digits + 2]: %d\n", numbers[digits + 1], numbers[digits + 2]);
+                if (format.og == EVERY || (format.og == LAST && values_left == 1))
+                // if (format.og == EVERY || (format.og == LAST && values_left <= 2))
+                {
+                    printf("Adding og and space\n");
+                    strcat(result, space);
+                    strcat(result, "og");
+                }
+                if (values_left > 0)
+                {
+                    strcat(result, space);
+                }
+                else
+                {
+                    printf("No values left from thousands\n");
+                    break;
                 }
             }
+            else
+            {
+                printf("No values IN thousands:\n");
+                printf("numbers[digits + 1]: %d. numbers[digits + 2]: %d\n", numbers[digits + 1], numbers[digits + 2]);
+            }
+
             // strcat(result, "tusind");
             // if (format.e == EVERY || (format.e == LAST && values_left == 1))
             // {
@@ -295,7 +298,7 @@ int number_to_danish(int number, char *result)
                 {
                     strcat(result, "millioner");
                 }
-                if (format.og == EVERY || (format.og == LAST && values_left == 2))
+                if (format.og == EVERY || (format.og == LAST && values_left == 1))
                 {
                     printf("Adding space and og\n");
                     strcat(result, " og");
@@ -576,13 +579,14 @@ int get_values_left(int *numbers, int digits)
     int value_left = 0;
     for (int i = 0; i < digits; i++)
     {
-        printf("Numbers[i] at index %d: %d\n",i, numbers[i]);
+        printf("Numbers[i] at index %d: %d\n", i, numbers[i]);
         // Lowest values come first in the array.
         // Numbers[i+2 % 3] is the value on the 10 spot. IF it has a value, we should ignore numbers[0], since they both make up the same number
         // And instead increment the index by 1
         printf("i + 2 %% 3 == 2 %d\n", i + 2 % 3 == 0);
-        if (i + 2 % 3 == 2 && numbers[i + 1] != 0) {
-        // if (numbers[1] != 0) {
+        if (i + 2 % 3 == 2 && numbers[i + 1] != 0)
+        {
+            // if (numbers[1] != 0) {
             printf("Incrementing value left\n");
             value_left++;
             i++;
