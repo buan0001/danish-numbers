@@ -104,7 +104,13 @@ int number_to_danish(int number, char *result)
                 {
                     char *temp_teen = first_twenty[less_than_twenty];
                     printf("Word at %d is %s\n", less_than_twenty, temp_teen);
+                    // It must be "et tusind" rather than "en tusind", so check for 5 digits (the digit before thousands)
+                    if (digits == 5 && less_than_twenty == 1) {
+                        strcat(result, "et");
+                    }
+                    else {
                     strcat(result, first_twenty[less_than_twenty]);
+                    }
                     if (digits != 2)
                     {
                         strcat(result, space);
@@ -212,8 +218,9 @@ int number_to_danish(int number, char *result)
             {
                 // We check if there's any values before the thousand spot. Only add thousand if there are
                 // Also make sure that the digits we check for dont exceed the max digits
-                if (numbers[digits] != 0 || (max_digits > 5 && numbers[digits + 1] != 0))
-                // if (numbers[digits] != 0 || (max_digits > 5 && numbers[digits+1] != 0) || (max_digits > 6 && numbers[digits+2] != 0))
+                printf(" numbers[digits + 1]: %d\n", numbers[digits + 1 ] );
+                // if (numbers[digits] != 0 || (max_digits > 5 && numbers[digits + 1] != 0))
+                if (numbers[digits] != 0 || (max_digits > 5 && numbers[digits+1] != 0) || (max_digits > 6 && numbers[digits+2] != 0))
                 {
                     strcat(result, "tusind");
                     if (format.e == EVERY || (format.e == LAST && values_left == 1))
@@ -235,6 +242,10 @@ int number_to_danish(int number, char *result)
                         printf("No values left from thousands\n");
                         break;
                     }
+                }
+                else {
+                    printf("No values IN thousands:\n");
+                    printf("numbers[digits + 1]: %d. numbers[digits + 2]: %d\n", numbers[digits + 1], numbers[digits + 2]);
                 }
             }
             // strcat(result, "tusind");
@@ -262,42 +273,34 @@ int number_to_danish(int number, char *result)
         else if (digits == 7)
         {
             printf("We are in the millions\n");
-            if (max_digits == digits)
+            if (max_digits == digits || numbers[digits] != 0 || (max_digits > 8 && numbers[digits + 1] != 0))
+            // if (max_digits == digits)
             {
-                char *temp_single = ones[numbers[digits - 1]];
-                printf("We are in the first millions. Temp single: %s\n", temp_single);
-                printf("numbers[digits - 1]] %d\n", numbers[digits - 1]);
-                if (numbers[digits - 1] == 1)
+                if (max_digits == digits)
                 {
-                    strcat(result, "en million");
+                    char *temp_single = ones[numbers[digits - 1]];
+                    printf("We are in the first millions. Temp single: %s\n", temp_single);
+                    printf("numbers[digits - 1]] %d\n", numbers[digits - 1]);
+                    if (numbers[digits - 1] == 1)
+                    {
+                        strcat(result, "en million");
+                    }
+                    else if (numbers[digits - 1] != 1)
+                    {
+                        strcat(result, temp_single);
+                        strcat(result, "millioner");
+                    }
                 }
-                else if (numbers[digits - 1] != 1)
+                else
                 {
-                    strcat(result, temp_single);
                     strcat(result, "millioner");
                 }
                 if (format.og == EVERY || (format.og == LAST && values_left == 2))
                 {
-                    printf("Adding space og and space\n");
-                    strcat(result, " og ");
-                }
-                printf("Adding space\n");
-                strcat(result, space);
-            }
-            if (numbers[digits] != 0 || (max_digits > 8 && numbers[digits + 1] != 0))
-
-            // We check if there's any values before the million spot. Only add million if there are
-            // Also make sure that the digits we check for dont exceed the max digits
-
-            // if (numbers[digits] != 0 || (max_digits > 8 && numbers[digits+1] != 0) || (max_digits > 9 && numbers[digits+2] != 0))
-            {
-                strcat(result, "millioner");
-                if (format.og == EVERY || (format.og == LAST && values_left == 2))
-                {
-                    printf("Adding og and space\n");
+                    printf("Adding space and og\n");
                     strcat(result, " og");
                 }
-                if (values_left > 1)
+                if (values_left > 0)
                 {
                     strcat(result, space);
                 }
@@ -307,6 +310,11 @@ int number_to_danish(int number, char *result)
                     break;
                 }
             }
+
+            // We check if there's any values before the million spot. Only add million if there are
+            // Also make sure that the digits we check for dont exceed the max digits
+
+            // if (numbers[digits] != 0 || (max_digits > 8 && numbers[digits+1] != 0) || (max_digits > 9 && numbers[digits+2] != 0))
         }
 
         else if (digits == 10)
@@ -566,10 +574,22 @@ int get_values_left(int *numbers, int digits)
     printf("Digits: %d\n", digits);
     print_numbers(numbers, digits);
     int value_left = 0;
-    for (int i = 0; i < digits - 1; i++)
+    for (int i = 0; i < digits; i++)
     {
-        printf("Numbers[i]: %d\n", numbers[i]);
-        if (numbers[i] != 0)
+        printf("Numbers[i] at index %d: %d\n",i, numbers[i]);
+        // Lowest values come first in the array.
+        // Numbers[i+2 % 3] is the value on the 10 spot. IF it has a value, we should ignore numbers[0], since they both make up the same number
+        // And instead increment the index by 1
+        printf("i + 2 %% 3 == 2 %d\n", i + 2 % 3 == 0);
+        if (i + 2 % 3 == 2 && numbers[i + 1] != 0) {
+        // if (numbers[1] != 0) {
+            printf("Incrementing value left\n");
+            value_left++;
+            i++;
+            continue;
+        }
+        // Otherwise we just see if there's a value in the current index and count it
+        else if (numbers[i] != 0)
         {
             value_left += 1;
         }
