@@ -168,7 +168,7 @@ int number_to_danish(int number, char *result)
                     strcat(result, "e");
                 }
                 // Only if it's the last, and last is set, OR if every is set and the next value is not 0
-                if ((format.og == EVERY && (numbers[digits - 2] != 0 || numbers[digits - 3] != 0)) || (format.og == LAST && digits == 3 && values_left == 2) )
+                if ((format.og == EVERY && (numbers[digits - 2] != 0 || numbers[digits - 3] != 0)) || (format.og == LAST && digits == 3 && values_left == 2))
                 {
                     printf("Adding space and og\n");
                     strcat(result, space);
@@ -208,31 +208,105 @@ int number_to_danish(int number, char *result)
                 printf("Adding space\n");
                 strcat(result, space);
             }
-            strcat(result, "tusind");
-            if (format.e == EVERY || (format.e == LAST && values_left == 1))
-            {
-                strcat(result, "e");
-            }
-            if (format.og == EVERY || (format.og == LAST && values_left == 2))
-            {
-                printf("Adding og and space\n");
-                strcat(result, space);
-                strcat(result, "og");
-            }
-            if (values_left > 1)
-            {
-                strcat(result, space);
-            }
             else
             {
-                printf("No values left from thousands\n");
-                break;
+                // We check if there's any values before the thousand spot. Only add thousand if there are
+                // Also make sure that the digits we check for dont exceed the max digits
+                if (numbers[digits] != 0 || (max_digits > 5 && numbers[digits + 1] != 0))
+                // if (numbers[digits] != 0 || (max_digits > 5 && numbers[digits+1] != 0) || (max_digits > 6 && numbers[digits+2] != 0))
+                {
+                    strcat(result, "tusind");
+                    if (format.e == EVERY || (format.e == LAST && values_left == 1))
+                    {
+                        strcat(result, "e");
+                    }
+                    if (format.og == EVERY || (format.og == LAST && values_left == 2))
+                    {
+                        printf("Adding og and space\n");
+                        strcat(result, space);
+                        strcat(result, "og");
+                    }
+                    if (values_left > 1)
+                    {
+                        strcat(result, space);
+                    }
+                    else
+                    {
+                        printf("No values left from thousands\n");
+                        break;
+                    }
+                }
             }
+            // strcat(result, "tusind");
+            // if (format.e == EVERY || (format.e == LAST && values_left == 1))
+            // {
+            //     strcat(result, "e");
+            // }
+            // if (format.og == EVERY || (format.og == LAST && values_left == 2))
+            // {
+            //     printf("Adding og and space\n");
+            //     strcat(result, space);
+            //     strcat(result, "og");
+            // }
+            // if (values_left > 1)
+            // {
+            //     strcat(result, space);
+            // }
+            // else
+            // {
+            //     printf("No values left from thousands\n");
+            //     break;
+            // }
         }
 
         else if (digits == 7)
         {
             printf("We are in the millions\n");
+            if (max_digits == digits)
+            {
+                char *temp_single = ones[numbers[digits - 1]];
+                printf("We are in the first millions. Temp single: %s\n", temp_single);
+                printf("numbers[digits - 1]] %d\n", numbers[digits - 1]);
+                if (numbers[digits - 1] == 1)
+                {
+                    strcat(result, "en million");
+                }
+                else if (numbers[digits - 1] != 1)
+                {
+                    strcat(result, temp_single);
+                    strcat(result, "millioner");
+                }
+                if (format.og == EVERY || (format.og == LAST && values_left == 2))
+                {
+                    printf("Adding space og and space\n");
+                    strcat(result, " og ");
+                }
+                printf("Adding space\n");
+                strcat(result, space);
+            }
+            if (numbers[digits] != 0 || (max_digits > 8 && numbers[digits + 1] != 0))
+
+            // We check if there's any values before the million spot. Only add million if there are
+            // Also make sure that the digits we check for dont exceed the max digits
+
+            // if (numbers[digits] != 0 || (max_digits > 8 && numbers[digits+1] != 0) || (max_digits > 9 && numbers[digits+2] != 0))
+            {
+                strcat(result, "millioner");
+                if (format.og == EVERY || (format.og == LAST && values_left == 2))
+                {
+                    printf("Adding og and space\n");
+                    strcat(result, " og");
+                }
+                if (values_left > 1)
+                {
+                    strcat(result, space);
+                }
+                else
+                {
+                    printf("No values left from millions\n");
+                    break;
+                }
+            }
         }
 
         else if (digits == 10)
@@ -492,7 +566,7 @@ int get_values_left(int *numbers, int digits)
     printf("Digits: %d\n", digits);
     print_numbers(numbers, digits);
     int value_left = 0;
-    for (int i = 0; i < digits -1; i++)
+    for (int i = 0; i < digits - 1; i++)
     {
         printf("Numbers[i]: %d\n", numbers[i]);
         if (numbers[i] != 0)
