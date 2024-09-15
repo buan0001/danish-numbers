@@ -50,6 +50,11 @@ int values_remaining(int *val_arr, int size)
 int number_to_danish(int number, char *buffer, struct NumberFormat format)
 {
     printf("number to convert: %d\n", number);
+    if (number == 0)
+    {
+        strcat(buffer, "nul");
+        return 0;
+    }
     // val_arr: Billions, millions, thousands, hundreds, tens
     int val_arr[5];
     int remainder = number;
@@ -66,6 +71,7 @@ int number_to_danish(int number, char *buffer, struct NumberFormat format)
 
     remainder = number;
     int remaining_values = values_remaining(val_arr, 5);
+    int remaining_values_over_99 = values_remaining(val_arr, 4);
 
     if (number < 0)
     {
@@ -75,42 +81,35 @@ int number_to_danish(int number, char *buffer, struct NumberFormat format)
 
     if (val_arr[0])
     {
-        handle_formatting(buffer, format, remaining_values, "milliard", "en", val_arr[0], remainder);
+        handle_formatting(buffer, format, remaining_values, remaining_values_over_99, "milliard", "en", val_arr[0], remainder);
         remainder = remainder % 1000000000;
         remaining_values--;
-        // number_to_danish(remainder, buffer, format);
+        remaining_values_over_99--;
     }
     if (val_arr[1])
-    // else if (millions)
     {
-        // printf("Millions: %d\n", val_arr[1]);
-        // printf("Millions: %d\n", millions);
-        handle_formatting(buffer, format, remaining_values, "million", "en", val_arr[1], remainder);
+        handle_formatting(buffer, format, remaining_values, remaining_values_over_99, "million", "en", val_arr[1], remainder);
         remainder = remainder % 1000000;
-        number_to_danish(remainder, buffer, format);
+        remaining_values--;
+        remaining_values_over_99--;
     }
-    else if (val_arr[2])
-    // else if (thousands)
+    if (val_arr[2])
     {
-        // printf("Thousands: %d\n", val_arr[2]);
-        // printf("Thousands: %d\n", thousands);
-        handle_formatting(buffer, format, remaining_values, "tusind", "et", val_arr[2], remainder);
+        handle_formatting(buffer, format, remaining_values, remaining_values_over_99, "tusind", "et", val_arr[2], remainder);
         remainder = remainder % 1000;
-        number_to_danish(remainder, buffer, format);
+        remaining_values--;
+        remaining_values_over_99--;
     }
-    else if (val_arr[3])
-    // else if (hundreds)
+    if (val_arr[3])
     {
-        // printf("Hundreds: %d\n", val_arr[3]);
-        // printf("Hundreds: %d\n", hundreds);
-        handle_formatting(buffer, format, remaining_values, "hundred", "et", val_arr[3], remainder);
+        handle_formatting(buffer, format, remaining_values, remaining_values_over_99, "hundred", "et", val_arr[3], remainder);
         remainder = remainder % 100;
-        number_to_danish(remainder, buffer, format);
+        remaining_values--;
+        remaining_values_over_99--;
     }
-    else if (val_arr[4])
+    if (val_arr[4])
     {
-        // printf("Tens: %d\n", val_arr[4]);
-        handle_tens(number, buffer, 0);
+        handle_tens(val_arr[4], buffer, 0);
     }
 
     return 0;
@@ -143,22 +142,25 @@ void handle_tens(int number, char *buffer, int is_et)
     }
 }
 
-void handle_formatting(char *buffer, struct NumberFormat format, int remaining_values, char *num_type, char *one_type, int number, int remainder)
+void handle_formatting(char *buffer, struct NumberFormat format, int remaining_values, int remaining_values_over_99, char *num_type, char *one_type, int number, int remainder)
 {
     // printf("One type: %s\n", one_type);
     // printf("Num type: %s\n\n", num_type);
 
     int current_is_last = remaining_values == 1 ? 1 : 0;
     int final_og = format.og == LAST && remaining_values == 2;
-    int final_e = format.e == LAST && last_hundred_or_thousand(remainder);
+    int final_e = format.e == LAST && remaining_values_over_99 == 1;
+    int final_et = format.et == LAST && remaining_values_over_99 == 1;
+    // int final_e = format.e == LAST && last_hundred_or_thousand(remainder);
+    // int final_et = format.et == LAST && last_hundred_or_thousand(remainder);
     // int final_e = format.e == LAST && current_is_last;
-    int final_et = format.et == LAST && last_hundred_or_thousand(remainder);
     // int final_et = format.et == LAST && current_is_last;
 
     // Get the amount of hundreds and tens, no matter if it's 2 million or 91
     int hundreds = number / 100;
     int tens = number % 100;
     printf("Hundreds: %d. Tens: %d\n", hundreds, tens);
+    printf("remaining values: %d\n", remaining_values);
 
     if (hundreds > 0)
     {
@@ -166,7 +168,6 @@ void handle_formatting(char *buffer, struct NumberFormat format, int remaining_v
         if (hundreds == 1 && (format.et == EVERY || final_et))
         {
             strcat(buffer, "et");
-            // strcat(buffer, one_type);
             strcat(buffer, space);
         }
         else if (hundreds > 1)
@@ -188,26 +189,16 @@ void handle_formatting(char *buffer, struct NumberFormat format, int remaining_v
         // printf("Adding tens\n");
         if ((final_og || (format.og == EVERY && remaining_values > 1)) && hundreds > 0)
         {
-            strcat(buffer, " og ");
+            strcat(buffer, "og ");
         }
         if (tens == 1)
         {
-            printf("Final et: %d\n", final_et);
-            printf("Format et: %d\n", format.et);
-            printf("Every et: %d\n", format.et == EVERY);
-            printf("Every: %d\n", EVERY);
-            if (final_et || format.et == EVERY)
+            if (final_et || format.et == EVERY || str_match(one_type, "en"))
             {
-                printf("Adding one type\n");
+                // printf("Adding one type\n");
                 strcat(buffer, one_type);
                 strcat(buffer, space);
             }
-            // else if (format.et != NEVER || (format.et == LAST && remaining_values == 1))
-            // {
-            //     printf("Adding tens\n");
-            //     handle_tens(tens, buffer, str_match(one_type, "et"));
-            //     strcat(buffer, space);
-            // }
         }
         else
         {
@@ -216,50 +207,38 @@ void handle_formatting(char *buffer, struct NumberFormat format, int remaining_v
             strcat(buffer, space);
         }
     }
+
     strcat(buffer, num_type);
     if ((format.e == EVERY || final_e) && str_match(one_type, "et"))
-    // if ((format.e == EVERY || final_e || && (str_match(num_type, "hundred") || (str_match(num_type, "tusind")
-         // This looks very convoluted thanks to all the string comparisons. BUT this allows "tusind" to have an ending "e", iff there's no more hundreds left. In that case, the hundred should get the "e"
-        //  (format.e == LAST && ((str_match(num_type, "hundred") || (str_match(num_type, "tusind") && !hundreds_left(remainder))) && remaining_values == 2)))
-        // Just make sure it can only add "e" to hundreds and thousands
-        // && str_match(one_type, "et"))
     {
         // printf("Adding e\n");
         strcat(buffer, "e");
     }
+
     // This triggers for millioner+. Add "er" if there's more than one
+    // else if ((hundreds > 0 || tens > 1) && strcmp(one_type, "en") == 0)
     else if ((hundreds > 0 || tens > 1) && str_match(one_type, "en"))
     {
+        // printf("Adding er to %s\n", num_type);
+        // printf("One type: %s matches 'en'\n", one_type);
         strcat(buffer, "er");
     }
-    if ((format.og == EVERY || final_og || (format.og == LAST && remaining_values == 2)) && remaining_values > 1)
+    if (remaining_values > 1)
     {
-        // printf("Adding og\n");
-        strcat(buffer, " og");
+        if ((format.og == EVERY || final_og || (format.og == LAST && remaining_values == 2)))
+        {
+            // printf("Adding og\n");
+            strcat(buffer, " og");
+        }
+        strcat(buffer, space);
     }
-    strcat(buffer, space);
-    printf("\nBuffer: %s\n\n", buffer);
-}
 
-// Assumes that the incoming number is 1000 < x < 1.000.000, or the operation will not make sense
-int hundreds_left(int remainder)
-{
-    return (remainder % 1000 / 100);
-}
-
-int last_hundred_or_thousand(int remainder)
-{
-    int thousands = remainder / 1000;
-    int hundreds = remainder % 1000 / 100;
-    if ((thousands && !hundreds) || (!thousands && hundreds))
-    {
-        return 1;
-    }
-    return 0;
-    
+    printf("\nBuffer: %s.\n\n", buffer);
 }
 
 int str_match(char *str1, char *str2)
 {
-    return (strcmp(str1, str2) == 0 ? 1 : -1);
+    // printf("Comparing %s and %s\n", str1, str2);
+    return strcmp(str1, str2) == 0;
+    // return (strcmp(str1, str2) == 0 ? 1 : -1);
 }
